@@ -62,12 +62,19 @@ var_names_New_model <- eventReactive(
       
       districts_shape<-disTricts[which(disTricts%in%disTricts_SHP)]
       
-      updateSelectInput(session,"district_new",choices=districts_shape,
-                        selected =districts_shape[1])
+      # updateSelectInput(session,"district_new",choices=districts_shape,
+      #                   selected =districts_shape[1])
       
-      dat_A<-data %>% 
+      dat_A_<-data |>  
         dplyr::arrange(district,year,week) %>% 
-        dplyr::filter(district %in% pp$district &!week==53)
+        dplyr::filter(district %in% pp$district &!week==53) |> 
+        dplyr::group_by(district,year,week) |> 
+        dplyr::mutate(N=1:n()) |> 
+        dplyr::filter(N==1) |> 
+        dplyr::ungroup()
+      
+      dat_A<-dat_A_ |> 
+        data.frame()
       
       beg.year<-min(dat_A$year)
       end.year<-max(dat_A$year)
@@ -77,9 +84,85 @@ var_names_New_model <- eventReactive(
                             district=sort(unique(dat_A$district))) %>% 
         dplyr::select(district,year,week)
       
+      ## remove duplicates here 2024-04-01
+      
+      
       data_augmented<-merge(dat_dist,dat_A,by=c("district","year","week"),all.x=T,sort=T) %>% 
         dplyr::mutate(district_w=paste0(district,'_',week)) %>% 
         dplyr::arrange(district,year,week)
+      
+      vars<-names(dat_A)
+      districts_shape
+      
+      al_vs<-grep("rain|temp|rainfall|precipitation|prec",vars,ignore.case=T)
+      
+      hos_vs<-grep("hosp",vars,ignore.case=T)
+      pop_vs<-grep("population|poblacion",vars,ignore.case=T)
+      
+      #freezeReactiveValue(input, "alarm_indicators")
+      #freezeReactiveValue(input, "number_of_cases")
+      #freezeReactiveValue(input, "population")
+      
+      
+      #output$dist_Input1<-renderUI(eval(parse(text=create_input_UI_district("district_new"))))
+      #output$dist_Input2<-renderUI(eval(parse(text=create_input_UI_district("output_dist_seas"))))
+      
+      updateSelectInput(session,"alarm_indicators_New_model",choices=vars,
+                        selected =vars[al_vs] )
+      
+      
+      updateSelectInput(session,"other_alarm_indicators_New_model",choices=vars )
+      
+      #updateSelectInput(session,"other_alarm_indicators_New_model",choices=var_names_New_model()$vars,
+      #selected ="rhdailymean" )
+      
+      updateSelectInput(session,"number_of_cases_New_model",choices=vars,
+                        #selected=var_names()$vars[3])
+                        selected=vars[hos_vs])
+      updateSelectInput(session,"population_New_model",choices=vars,
+                        selected =vars[pop_vs])
+      
+      updateSelectInput(session,"district_new",choices=districts_shape,
+                        selected =districts_shape[1])
+      
+      updateSelectInput(session,"district_seas",choices=districts_shape,
+                        selected =districts_shape[1])
+      
+      updateSelectInput(session,"district_validation",choices=districts_shape,
+                        selected =districts_shape[1])
+      
+      #district_manage
+      
+      updateSelectInput(session,"district_manage",choices=districts_shape,
+                        selected =districts_shape[1])
+      
+      
+      updateSliderInput(session,"new_model_Year_plot",
+                        min=min(dat_A$year),
+                        max=max(dat_A$year),
+                        value =max(dat_A$year))
+      
+      updateSliderInput(session,"new_model_Year_validation",
+                        min=min(dat_A$year)+1,
+                        max=max(dat_A$year),
+                        value =max(dat_A$year))
+      
+      #value=max(var_names_spat()$dat$year)-1)
+      
+      updateSliderInput(session,"new_model_Week_plot_spat",
+                        min=min(dat_A$week),
+                        max=max(dat_A$week),
+                        value =min(dat_A$week))
+      #value=max(var_names_spat()$dat$year)-1)
+      
+      # output$Uploaded_data<-DT::renderDataTable(DT::datatable(var_names_New_model()$dat,
+      #                                                         options = list(autoWidth = TRUE,
+      #                                                                        searching = T)))
+    
+      
+      #####----###
+
+      ####----###
       
       list(vars=names(data),dat=data,
            data_augmented=data_augmented,
@@ -93,71 +176,9 @@ var_names_New_model <- eventReactive(
 
 
 
-observe({
+observe(
+  {
   
-  
-  #al_vs<-grep("rain|temp|rainfall|precipitation|prec|humid|rh|humid|ovi|eggs",var_names()$vars,ignore.case=T)
-  al_vs<-grep("rain|temp|rainfall|precipitation|prec",var_names_New_model()$vars,ignore.case=T)
-  
-  hos_vs<-grep("hosp",var_names_New_model()$vars,ignore.case=T)
-  pop_vs<-grep("population|poblacion",var_names_New_model()$vars,ignore.case=T)
-  
-  #freezeReactiveValue(input, "alarm_indicators")
-  #freezeReactiveValue(input, "number_of_cases")
-  #freezeReactiveValue(input, "population")
-
-  
-  #output$dist_Input1<-renderUI(eval(parse(text=create_input_UI_district("district_new"))))
-  #output$dist_Input2<-renderUI(eval(parse(text=create_input_UI_district("output_dist_seas"))))
-  
-  updateSelectInput(session,"alarm_indicators_New_model",choices=var_names_New_model()$vars,
-                    selected =var_names_New_model()$vars[al_vs] )
-  
-  #updateSelectInput(session,"other_alarm_indicators_New_model",choices=var_names_New_model()$vars,
-                    #selected ="rhdailymean" )
- 
-  updateSelectInput(session,"number_of_cases_New_model",choices=var_names_New_model()$vars,
-                      #selected=var_names()$vars[3])
-                      selected=var_names_New_model()$vars[hos_vs])
-  updateSelectInput(session,"population_New_model",choices=var_names_New_model()$vars,
-                      selected =var_names_New_model()$vars[pop_vs])
-  
-  updateSelectInput(session,"district_new",choices=var_names_New_model()$districts_shape,
-                    selected =var_names_New_model()$districts_shape[1])
-  
-  updateSelectInput(session,"district_seas",choices=var_names_New_model()$districts_shape,
-                    selected =var_names_New_model()$districts_shape[1])
-  
-  updateSelectInput(session,"district_validation",choices=var_names_New_model()$districts_shape,
-                    selected =var_names_New_model()$districts_shape[1])
-  
-  #district_manage
-  
-  updateSelectInput(session,"district_manage",choices=var_names_New_model()$districts_shape,
-                    selected =var_names_New_model()$districts_shape[1])
-  
-  
-  updateSliderInput(session,"new_model_Year_plot",
-                    min=min(var_names_New_model()$dat$year),
-                    max=max(var_names_New_model()$dat$year),
-                    value =max(var_names_New_model()$dat$year))
-  
-  updateSliderInput(session,"new_model_Year_validation",
-                    min=min(var_names_New_model()$dat$year)+1,
-                    max=max(var_names_New_model()$dat$year),
-                    value =max(var_names_New_model()$dat$year))
-  
-  #value=max(var_names_spat()$dat$year)-1)
-  
-  updateSliderInput(session,"new_model_Week_plot_spat",
-                    min=min(var_names_New_model()$dat$week),
-                    max=max(var_names_New_model()$dat$week),
-                    value =min(var_names_New_model()$dat$week))
-  #value=max(var_names_spat()$dat$year)-1)
-  
-  # output$Uploaded_data<-DT::renderDataTable(DT::datatable(var_names_New_model()$dat,
-  #                                                         options = list(autoWidth = TRUE,
-  #                                                                        searching = T)))
   boundary_file<-var_names_New_model()$SHP
   
   
@@ -187,47 +208,47 @@ observe({
   alarm_indicators<-input$alarm_indicators_New_model
   cat(paste('\nAlarm indicators now ..\n'),paste(input$alarm_indicators_New_model,collapse =','),'\n\n')
   alarm.indicators<-alarm_indicators
-  
+
   dat_slider<-dat_A
-  
+
   all_slice<-foreach(a=1:length(alarm_indicators))%do% get_fluid_slice_Output(a,'alarm.indicators')
-  
-  
-  
+
+
+
   output$var_Slices_Plots<-renderUI(eval(parse(text=paste('tabsetPanel(',paste(unlist(all_slice),collapse =','),')'))))
-  
+
   ##plot the shapefile and render the data
-  
+
   ##update the risk reactive values
-  
+
   par_text0<-get_UI_update_d(obj.plots=covar_to_Plot,
                              panel_Update="Descriptive Plots" ,
                              shinyOutputType="plotOutput",
                              cols=2,
                              out_ref="descr")
-  
+
   output$new_model_data_descriptive_Plots<-renderUI({
     tagList(eval(par_text0))
   })
-  
+
   par_text2<-get_UI_update_d(obj.plots=covar_to_Plot,
                              panel_Update="Time_series" ,
                              shinyOutputType="dygraphOutput",
                              cols=1,
                              out_ref="time_series")
-  
+
   output$new_model_Time_series_Plots<-renderUI({
     tagList(eval(par_text2))
   })
-  
-  
+
+
   par_text1<-get_UI_update_d(obj.plots=covar_to_Plot,
                              panel_Update="Spat_Covariate_Plots_new_Model" ,
                              shinyOutputType="leafletOutput",
                              cols=2,
                              out_ref="spat_cov")
-  
-  
+
+
   output$Spat_Covariate_Plots_new_Model<-renderUI({
     tagList(eval(par_text1))
   })

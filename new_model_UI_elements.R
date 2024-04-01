@@ -362,7 +362,7 @@ alarm.Input<-column(12,offset =0,selectInput("alarm_indicators_New_model", selec
 
 alarm_Spline.Input<-column(12,offset =0,selectInput("other_alarm_indicators_New_model", selected =c("rainsum","meantemperature"),
                                              "Other alarm indicator(s)",
-                                             choices=c(" "),multiple =T,
+                                             choices=" ",multiple =T,
                                              width='70%'))
 
 
