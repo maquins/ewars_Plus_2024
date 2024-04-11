@@ -169,11 +169,11 @@ all_districts<-unique(data_augmented$district)
 
 #DD<-1
 
-DIC1_run<-T
-DIC2_run<-T
-CV_run<-T
-Weight_save<-T
-
+DIC1_run<-F
+DIC2_run<-F
+CV_run<-F
+Weight_save<-F
+Run_sel_Z<-F
 
 out_Path<-file.path(getwd(),'Outputs')
 
@@ -305,9 +305,8 @@ Time_one_Dist<-system.time({
     lag.vars<-names(Model_data_lags_sub)[id_lag]
     
     
-    folders_Create<-c("Lag_selection","Lag_Comb_selection","Weekly_crossValidations","For_Shiny","For_Shiny_DBII","Prediction_weights")
-    folder_Vars<-c("path_dic1","path_dic2","cv_path","shiny_obj_pth","shinyDBII_obj_pth","pred_weights_pth")
-    
+    folders_Create<-c("Lag_selection","Lag_Comb_selection","Weekly_crossValidations","For_Shiny","For_Shiny_DBII","Pred_Weights_objs","Prediction_weights","z_value_selection")
+    folder_Vars<-c("path_dic1","path_dic2","cv_path","shiny_obj_pth","shinyDBII_obj_pth","pred_weights_objs_pth","pred_weights_pth","z_value_sel_pth")
     #ff<-1
     
     for (ff in 1:length(folders_Create)){
@@ -754,7 +753,7 @@ Time_one_Dist<-system.time({
           
           cv_idx<-which(CV_data$year==work_CV$year[cc] & CV_data$week%in% week_Sub)
           
-          
+          last_Dat_Year<-max(CV_data$year,na.rm=T)
           
           model_CV<-Sel_Vars(selected_Model_form_rw,"nbinomial",CV_data,theta_beg_Rw,T)
           
@@ -803,11 +802,24 @@ Time_one_Dist<-system.time({
                        y.pred=y.pred,
                        xx.s=xx.s)
           
+          out_ls_pred_wts<-list(model_CV=model_CV,
+                                y.pred=y.pred,
+                                post_Samples=xx)
+          
           
           save_name<-file.path(cv_path,paste0(work_CV$Name_out[cc],'.rds'))
           
+          cv_cc_pref<-str_pad(cc,pad=0,side='left',width=2)
+          
+          
+          save_name_pred_wts<-file.path(pred_weights_objs_pth,paste0('For_Pred_weights_',last_Dat_Year,'_',cv_cc_pref,'.rds'))
+          
+          
           unlink(save_name)
           saveRDS(out_ls,save_name,compress = T)
+          
+          unlink(save_name_pred_wts)
+          suppressWarnings(saveRDS(out_ls_pred_wts,save_name_pred_wts,compress = T))
           
           pctn_done<-paste0(round((cc/nrow(work_CV))*100,1),' %')
           
@@ -865,7 +877,7 @@ Time_one_Dist<-system.time({
     
     ## save weights here
     
-    source("Save_Prediction_Weights.R",local=T)
+    source("Save_Prediction_Weights_Vectorized.R",local=T)
     
     ## Convert pred to long datasets
     
@@ -1097,6 +1109,7 @@ Time_one_Dist<-system.time({
     }
     
     ssample_z_Select<-20
+    set.seed(345656)
     z_test_Sample<-sample(z_test,size=ssample_z_Select)
     
     #zvalue_sel<-foreach(aa=z_test_Sample,.combine =rbind)%do%select_Z_values(aa)
@@ -1109,6 +1122,8 @@ Time_one_Dist<-system.time({
     
     cat("",sep='\n')
     cat("selecting Z value ...",sep='\n')
+    
+    if(Run_sel_Z){
     
     for(zz in 1:ssample_z_Select){
       
@@ -1129,8 +1144,15 @@ Time_one_Dist<-system.time({
     
     p_progress$close()
     
-    zvalue_sel<-do.call(rbind,zvalue_sel_ls)
+    #zvalue_sel<-do.call(rbind,zvalue_sel_ls)
+    zvalue_sel0<-do.call(rbind,zvalue_sel_ls)
     
+    save_zv_name<-file.path(z_value_sel_pth,"zvalue_sel.rds")
+    saveRDS(zvalue_sel0,save_zv_name)
+    
+    }
+    
+    zvalue_sel<-readRDS(file.path(z_value_sel_pth,"zvalue_sel.rds"))
     
     
     zvalue_sel_Ordered1<-zvalue_sel |> 
