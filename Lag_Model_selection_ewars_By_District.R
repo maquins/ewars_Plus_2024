@@ -169,11 +169,11 @@ all_districts<-unique(data_augmented$district)
 
 #DD<-1
 
-DIC1_run<-F
-DIC2_run<-F
-CV_run<-F
-Weight_save<-F
-Run_sel_Z<-F
+DIC1_run<-T
+DIC2_run<-T
+CV_run<-T
+Weight_save<-T
+Run_sel_Z<-T
 
 out_Path<-file.path(getwd(),'Outputs')
 
