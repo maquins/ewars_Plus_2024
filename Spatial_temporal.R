@@ -686,7 +686,8 @@ observeEvent(input$run_mod,
                  
                  shiny_obj1<-get_Ojs1()
                  
-                 model_final_rw<- shiny_obj1[["model_final_rw"]]
+                 #model_final_rw<- shiny_obj1[["model_final_rw"]]
+                 model_final_rw_fitted_Values<-shiny_obj1[["model_final_rw_fitted_Values"]]
                  all_cv<-shiny_obj1[["all_cv"]]
                  y.PREDS<-shiny_obj1[["y.PREDS"]]
                  
@@ -730,11 +731,11 @@ observeEvent(input$run_mod,
                    dplyr::filter(!year>=new_model_Year_validation) |> 
                    dplyr::mutate(observed_cases=cases,
                                  observed_rate=(cases/pop)*1e5,
-                                 fitted=model_final_rw$summary.fitted.values$mean[idx_runin],
+                                 fitted=model_final_rw_fitted_Values$mean[idx_runin],
                                  fitted=(fitted/pop)*1e5,
-                                 fittedp25=model_final_rw$summary.fitted.values$`0.025quant`[idx_runin],
+                                 fittedp25=model_final_rw_fitted_Values$`0.025quant`[idx_runin],
                                  fittedp25=(fittedp25/pop)*1e5,
-                                 fittedp975=model_final_rw$summary.fitted.values$`0.975quant`[idx_runin],
+                                 fittedp975=model_final_rw_fitted_Values$`0.975quant`[idx_runin],
                                  fittedp975=(fittedp975/pop)*1e5,
                    ) %>% 
                    dplyr::left_join(for_endemic,by=c("district","year","week")) |> 

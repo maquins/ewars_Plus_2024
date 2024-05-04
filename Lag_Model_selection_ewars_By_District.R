@@ -802,7 +802,7 @@ Time_one_Dist<-system.time({
                        y.pred=y.pred,
                        xx.s=xx.s)
           
-          out_ls_pred_wts<-list(model_CV=model_CV,
+          out_ls_pred_wts<-list(model_CV=summary(model_CV),
                                 y.pred=y.pred,
                                 post_Samples=xx)
           
@@ -1743,7 +1743,7 @@ Time_one_Dist<-system.time({
                              Dat_mod_sub=Dat_mod_sub,
                              Model_data_lags_sub=Model_data_lags_sub,
                              form_baseline=form_baseline,
-                             baseline_model=baseline_model,
+                             #baseline_model=baseline_model,
                              theta_beg=theta_beg,
                              id_lag=id_lag,
                              path_dic1=path_dic1,
@@ -1774,8 +1774,10 @@ Time_one_Dist<-system.time({
                              Select_Lag_Comb_rw=Select_Lag_Comb_rw,
                              selected_Model_form=selected_Model_form,
                              selected_Model_form_rw=selected_Model_form_rw,
-                             model_final_Lin=model_final_Lin,
-                             model_final_rw=model_final_rw,
+                             ## suppressed 2024-04-23
+                             #model_final_Lin=model_final_Lin,
+                             #model_final_rw=model_final_rw,
+                             model_final_rw_fitted_Values=model_final_rw$summary.fitted.values,
                              work_CV=work_CV,
                              time_CV=tim_CV,
                              all_files_Cv=all_files_Cv,
@@ -1819,9 +1821,24 @@ Time_one_Dist<-system.time({
                              theta_beg_Rw=theta_beg_Rw)
     
     file_name_save<-file.path(shiny_obj_pth,"Shiny_Objs.rds")
-    saveRDS(district_Objs_save,file_name_save,compress =T)
+    
+    cat("",sep='\n')
+    
+    cat('saving  district objs ... ',sep='\n')
     
     
+    time_Sav<-system.time({
+      
+    suppressWarnings(saveRDS(district_Objs_save,file_name_save,compress =T))
+    
+    })
+    
+    cat("",sep='\n')
+    time_str<-paste0('Time ',round(time_Sav[3]/60,3), " min \n\n")
+    
+    system(paste0('echo ',time_str))
+    
+    cat("",sep='\n')
     
   }
 })
@@ -1919,6 +1936,21 @@ Time_one_Dist[3]/60
   
   
 file_name_save_all<-file.path(all_files_Path,"Shiny_Objs_all.rds")
-saveRDS(All_Objs_save,file_name_save_all,compress =T)
+
+cat("",sep='\n')
+
+cat('saving all district objs ... ',sep='\n')
+
+time_Sav<-system.time({
+  
+  suppressWarnings(saveRDS(All_Objs_save,file_name_save_all,compress =T))
+  
+})
 
 
+time_str<-paste0(' Time ',round(time_Sav[3]/60,3), " min\n\n")
+cat("",sep='\n')
+
+system(paste0('echo ',time_str))
+
+cat("",sep='\n')
