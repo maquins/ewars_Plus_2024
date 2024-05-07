@@ -125,11 +125,11 @@ var_names_New_model <- eventReactive(
       updateSelectInput(session,"district_new",choices=districts_shape,
                         selected =districts_shape[1])
       
-      updateSelectInput(session,"district_seas",choices=districts_shape,
-                        selected =districts_shape[1])
-      
-      updateSelectInput(session,"district_validation",choices=districts_shape,
-                        selected =districts_shape[1])
+      # updateSelectInput(session,"district_seas",choices=districts_shape,
+      #                   selected =districts_shape[1])
+      # 
+      # updateSelectInput(session,"district_validation",choices=districts_shape,
+      #                   selected =districts_shape[1])
       
       #district_manage
       

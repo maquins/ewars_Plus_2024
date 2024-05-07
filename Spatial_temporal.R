@@ -103,15 +103,7 @@ observeEvent(input$run_mod,
                
                ## Descriptive Plots
                observeEvent(input$district_new,{# Output 1
-                 #require(input$district_new)
-                 
-                 ##update the other district inputs
-                 
-                 updateSelectInput(session,"district_seas",
-                                   selected =input$district_new)
-                 updateSelectInput(session,"district_validation",
-                                   selected =input$district_new)
-
+              
 
                  dist_padded<-str_pad(input$district_new,side="left",width=3,pad=0)
                  shiny_obj_pth<-file.path(shiny_obj_Main_pth,paste0("District_",dist_padded))
@@ -241,18 +233,10 @@ observeEvent(input$run_mod,
               
                ### Section for the Spatial Plots
                
-               observeEvent(input$district_seas,{# Output 1
-                 #require(input$district_new)
+               observeEvent(input$district_new,{# Output 1
+              
                  
-                 ##update the other district inputs
-                 
-                 updateSelectInput(session,"district_new",
-                                   selected =input$district_seas)
-                 updateSelectInput(session,"district_validation",
-                                   selected =input$district_seas)
-                 
-                 
-                 dist_padded<-str_pad(input$district_seas,side="left",width=3,pad=0)
+                 dist_padded<-str_pad(input$district_new,side="left",width=3,pad=0)
                  shiny_obj_pth<-file.path(shiny_obj_Main_pth,paste0("District_",dist_padded))
                  
                  get_Ojs1<-function(){
@@ -660,21 +644,16 @@ observeEvent(input$run_mod,
               
                #Model Validations output
                
-               observeEvent(c(input$district_validation,
+               observeEvent(c(input$district_new,
                               input$z_outbreak_new,
                               input$Optimal_z
                ),
                { ## begin of Model Validation
                  
                  
-                 updateSelectInput(session,"district_seas",
-                                   selected =input$district_validation)
-                 updateSelectInput(session,"district_new",
-                                   selected =input$district_validation)
-                 
                  new_model_Year_validation<-input$new_model_Year_validation
-                 district_validation<-input$district_validation
-                 dist_padded<-str_pad(input$district_validation,side="left",width=3,pad=0)
+                 district_validation<-input$district_new
+                 dist_padded<-str_pad(input$district_new,side="left",width=3,pad=0)
                  shiny_obj_pth<-file.path(shiny_obj_Main_pth,paste0("District_",dist_padded))
                  
                  get_Ojs1<-function(){

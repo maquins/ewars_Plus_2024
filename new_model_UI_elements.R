@@ -13,12 +13,19 @@ output_dist_new_model<-selectInput(inputId = 'district_new',
             multiple =F)
 
 
-output_dist_seas<-selectInput(inputId = 'district_seas',
+output_dist_seas_prev<-selectInput(inputId = 'district_seas',
                                    label = 'District',
                                    choices = dist_SEL,
                                    selected =dist_SEL[1],
                                    selectize =T,
                                    multiple =F)
+
+output_dist_seas<-selectInput(inputId = 'district_seas',
+                              label = 'District',
+                              choices = dist_SEL,
+                              selected =dist_SEL[1],
+                              selectize =T,
+                              multiple =F)
 
 output_dist_validation<-selectInput(inputId = 'district_validation',
                               label = 'District',
@@ -226,7 +233,9 @@ row_elements_New_Model_prospective<-fluidRow(
 
 output_graphs_New_Model<-tabsetPanel(
   tabPanel("Descriptive analysis",
-            fluidPage(inputPanel(column(12,offset=0,output_dist_new_model)),
+            #fluidPage(inputPanel(column(12,offset=0,output_dist_new_model)),
+                      fluidPage(
+                                
              tabsetPanel(
   tabPanel("Tables",
 
@@ -284,11 +293,16 @@ tabPanel("Spatial Plots",
   
 ),
 tabPanel("Seasonality",
-         fluidPage(inputPanel(column(12,offset=0,output_dist_seas)),
+         # prev fluidPage(inputPanel(column(12,offset=0,output_dist_seas)),
+                   #fluidPage(inputPanel(column(12,offset=0,output_dist_seas)),
+                             fluidPage(
+                                       
+                             
                    plotOutput("Seasonality_plot"))),
 tabPanel("Model Validation",
-         fluidPage(inputPanel(column(12,offset=0,output_dist_validation),
-                              #column(12,offset=4,year_validation),
+         fluidPage(inputPanel(#column(12,offset=0,output_dist_validation),
+                              #column(12,offset=0,plotOutput("fdff")),
+                              column(12,offset=4),
                               column(12,offset=4,z_outbreak_Conditional),
                               #column(12,offset=4,checkboxInput("Optimal_z", "Optimal z\noutbreak", value = FALSE, width = NULL))),
                               column(12,offset=4,checkboxInput("Optimal_z", "Optimal z\noutbreak", value = TRUE, width = NULL))),
@@ -433,6 +447,30 @@ save_M<-column(1,
                                  font-size: 20px; font-weight: 400;")
 )
 
+## District Plus save Model Plus
+save_M<-column(1,
+               plotOutput("dd",height ="220px"),
+               actionButton('run_mod','Run Model',
+                            style="color: forestgreen; background-color:grey(0.5);
+                                 padding: 10px 15px; height: 80px; cursor: pointer;
+                                 font-size: 20px; font-weight: 400;")
+)
+
+Dist_and_saveM<-column(1,
+                     
+                       plotOutput("dd",height ="40px"),
+                       #inputPanel(column(12,output_dist_new_model)),
+                       column(12,output_dist_new_model),
+                       
+                       plotOutput("dd1",height ="60px"),
+                       actionButton('run_mod','Run Model',
+                                    style="color: forestgreen; background-color:grey(0.5);
+                                 padding: 10px 15px; height: 80px; cursor: pointer;
+                                 font-size: 20px; font-weight: 400;")
+)
+
+
+
 #output_graphs_New_Model
 
 row_elements_New_Modela<-fluidRow(     
@@ -446,19 +484,28 @@ row_elements_New_Modela<-fluidRow(
   save_M
 )
 
-row_elements_New_Model<-fluidRow(     
+District_header<-fluidRow(
+  column(12,inputPanel(output_dist_new_model))
+  
+)
+
+row_elements_New_Model<-fluidRow(
+  
   column(3,
          header_Input),
   
   column(8,
+         District_header,
          output_graphs_New_Model
          
   ),
+  
   save_M
 )
 
 dashboad_elements_New_model<-tabPanel("Dashboard I",
                                          fluidPage(
+                                           #District_header,
                                            row_elements_New_Model
 
                                          )

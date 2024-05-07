@@ -1108,22 +1108,24 @@ Time_one_Dist<-system.time({
       
     }
     
-    ssample_z_Select<-20
-    set.seed(345656)
-    z_test_Sample<-sample(z_test,size=ssample_z_Select)
     
-    #zvalue_sel<-foreach(aa=z_test_Sample,.combine =rbind)%do%select_Z_values(aa)
-    
-    zvalue_sel_ls<-vector(ssample_z_Select,mode='list')
-    
-    Header_progress<-paste0("Z_value selection:",District_Now,' ',one_of_dist_str)
-    p_progress <- Progress$new(min=0,max=ssample_z_Select)
-    p_progress$set(message =Header_progress ,value=0)
-    
-    cat("",sep='\n')
-    cat("selecting Z value ...",sep='\n')
-    
+  
     if(Run_sel_Z){
+      
+      ssample_z_Select<-20
+      set.seed(345656)
+      z_test_Sample<-sample(z_test,size=ssample_z_Select)
+      
+      #zvalue_sel<-foreach(aa=z_test_Sample,.combine =rbind)%do%select_Z_values(aa)
+      
+      zvalue_sel_ls<-vector(ssample_z_Select,mode='list')
+      
+      Header_progress<-paste0("Z_value selection:",District_Now,' ',one_of_dist_str)
+      p_progress <- Progress$new(min=0,max=ssample_z_Select)
+      p_progress$set(message =Header_progress ,value=0)
+      
+      cat("",sep='\n')
+      cat("selecting Z value ...",sep='\n')
     
     for(zz in 1:ssample_z_Select){
       
