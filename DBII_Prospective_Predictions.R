@@ -37,15 +37,34 @@ observeEvent(input$run_Pred,{
   cat(unique(Prospective_Data$district),sep='\n')
  
   ## update the districts Tab on DBII
-
   
-  source("DBII_with_Weights_by_District.R",local=T)
+  get_Ojs<-function(){
+    gc()
+    readRDS(file.path(all_files_Path,"Shiny_Objs_all.rds"))
+    
+    
+  }
+  
+  all_Objs<-get_Ojs()
+  
+  all_districts_pros<-unique(Prospective_Data$district)
+  
+  
+  
+  Districts_DBI_surve_Dat<-unique(all_Objs$all_endemic$district)
+
+  source("DBII_with_Weights_by_District_vectorized.R",local=T)
   
   ## Update district pros with loaded prospective data
   
   observeEvent(c(input$district_prospective,
                  input$z_outbreak_new),{
-    
+                   
+                   District_Now2<-input$district_prospective
+                   
+                   if(District_Now2%in%Districts_DBI_surve_Dat){
+                   #req(input$district_prospective %in% Districts_DBI_surve_Dat)
+                   
                    dist_padded<-str_pad(input$district_prospective,side="left",width=3,pad=0)
                    shiny_obj_pth<-file.path(shiny_obj_Main_pth,paste0("District_",dist_padded))
                    shinyDBII_obj_pth<-file.path(shinyDBII_obj_Main_pth,paste0("District_",dist_padded))
@@ -273,7 +292,51 @@ observeEvent(input$run_Pred,{
                        flextable::hline_top() |> 
                        flextable::width(j=1,3,unit ='in') |> 
                        flextable::htmltools_value()})
-                
+                   }else{
+                     
+                     coords_raser<-data.frame(x=c(0,4,4,0),y=c(0,0,1,1),z=0)
+                     
+                     raster_obj<-raster::rasterFromXYZ(coords_raser)
+                     
+                     poly_obj<-raster::rasterToPolygons(raster_obj)[1,]
+                     
+                     poly_obj_Sf<-sf::st_as_sf(poly_obj)
+                     
+                     plot(poly_obj_Sf)
+                     
+                     text_coords0<-data.frame(x=-1,y=1,z=paste0("Please run  DBI for district ",District_Now2," !!"))
+                     text_coords<-text_coords0
+                     coordinates(text_coords)<-~x+y
+                     text_coords_sf<-sf::st_as_sf(text_coords)
+                     
+                     Message_Pred_Plot<-ggplot()+
+                       geom_sf(data=poly_obj_Sf)+
+                       coord_sf(ylim=c(0.9,1.1),xlim =c(-1.5,0.2))+
+                       geom_sf_text(aes(label=z),
+                                    size=9,
+                                    #nudge_x =0.6,
+                                    #position ="jitter",
+                                    data=text_coords_sf,
+                                    col="brown")+
+                       theme_bw()+
+                       theme(panel.background =element_blank(),
+                             plot.background =element_blank(),
+                             panel.grid =element_blank(),
+                             axis.line =element_blank(),
+                             axis.text =element_blank(),
+                             axis.ticks =element_blank(),
+                             axis.title =element_blank(),
+                             panel.border=element_blank())
+                     
+                     output$out_break_prob_plot_pros<-renderPlot({gridExtra::grid.arrange(Message_Pred_Plot,nrow=4,ncol=2)})
+                     output$response_plot_pros<-NULL
+                     output$prediction_tab_pros<-NULL
+                     output$pros_meta1<-NULL
+                     output$pros_meta2<-NULL
+                     output$pros_meta3<-NULL
+                     output$pros_meta4<-NULL
+                     output$pros_meta5<-NULL
+                  }
     
   })
   
