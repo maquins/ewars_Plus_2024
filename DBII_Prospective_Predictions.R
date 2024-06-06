@@ -30,7 +30,8 @@ observeEvent(input$run_Pred,{
                   Pop=.data[[population_var]],
                   log_Pop=log(.data[[population_var]]/1e5),
                   pop_offset=log_Pop,
-                  observed_rate=(Cases/Pop)*1e5)
+                  observed_rate=(Cases/Pop)*1e5) |> 
+    data.frame()
   
   #pop_offset=log(population/1e5)
   
@@ -45,13 +46,13 @@ observeEvent(input$run_Pred,{
     
   }
   
-  all_Objs<-get_Ojs()
+  
+  #all_Objs<-get_Ojs()
   
   all_districts_pros<-unique(Prospective_Data$district)
   
   
-  
-  Districts_DBI_surve_Dat<-unique(all_Objs$all_endemic$district)
+  Districts_DBI_surve_Dat<- readRDS(file.path(all_files_Path,"Districts_DBI_surve_Dat.rds"))
 
   source("DBII_with_Weights_by_District_vectorized.R",local=T)
   

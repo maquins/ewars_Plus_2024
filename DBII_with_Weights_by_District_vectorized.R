@@ -115,12 +115,16 @@ if(run_Pros_pred){
       
       vars_For_inla_grp<-str_split_fixed(Selected_lag_Vars_pros,"_",2)[,1]
       
+      #vv<-1
+      
       for (vv in 1:length(vars_For_inla_grp)){
         
-        Inlagrp_Int_dat<-Inlagrp_Vars_pros[[vv]] |> 
-          dplyr::mutate(intval=str_remove_all(Interval,'[)()]|\\[|\\]'),
-                        int_beg=as.numeric(str_split(intval,pattern=',',n=2,simplify=T)[,1]),
-                        int_end=as.numeric(str_split(intval,pattern=',',n=2,simplify=T)[,2]))
+        # Inlagrp_Int_dat<-Inlagrp_Vars_pros[[vv]] |> 
+        #   dplyr::mutate(intval=str_remove_all(Interval,'[)()]|\\[|\\]'),
+        #                 int_beg=as.numeric(str_split(intval,pattern=',',n=2,simplify=T)[,1]),
+        #                 int_end=as.numeric(str_split(intval,pattern=',',n=2,simplify=T)[,2]))
+        
+        Inlagrp_Int_dat<-Inlagrp_Vars_pros[[vv]]
         
         
         grp_obj_Name_pros<-paste0('Var',vv,'_inla_grp')
@@ -129,7 +133,13 @@ if(run_Pros_pred){
         
         ##find interval where the variables lie
         
-        Vars_Find<-Prospective_Data_Sub[,vars_For_inla_grp[vv]]
+        #Vars_Find<-Prospective_Data_Sub[,vars_For_inla_grp[vv]]
+        
+        Vars_Find0<-Prospective_Data_Sub |> 
+          dplyr::mutate(var_sel=.data[[vars_For_inla_grp[vv]]]) |> 
+          dplyr::select(var_sel)
+        
+        Vars_Find<-Vars_Find0$var_sel
         
         #findInterval(Vars_Find,Inlagrp_Int_dat$int_beg)
         Size.grp<-nrow(Inlagrp_Int_dat)
@@ -144,10 +154,13 @@ if(run_Pros_pred){
           
           Matrix_wgts[ww,]<-as.numeric(1:Size.grp==int_found)
         }
-        padded_grp_N<-str_pad(1:Inla_grp_Nsize_pros,pad=0,side ='left',width =2)
+        #padded_grp_N<-str_pad(1:Inla_grp_Nsize_pros,pad=0,side ='left',width =2)
+        padded_grp_N<-str_pad(1:Size.grp,pad=0,side ='left',width =2)
         
         
         colnames(Matrix_wgts)<-paste0(Var_grp_pref_pros,'_Inla_group_',padded_grp_N)
+        
+        #colnames(Matrix_wgts)<-paste0(Var_grp_pref_pros,'_Inla_group_',padded_grp_N)
         
         assign(grp_obj_Name_pros,
                Matrix_wgts)

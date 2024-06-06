@@ -50,7 +50,7 @@ observeEvent(input$run_mod,
                #rm(all_Objs)
                
                all_Objs<-get_Ojs()
-               gc()
+              
                
                
                alarm_vars<-all_Objs[["alarm_vars"]]
@@ -64,6 +64,10 @@ observeEvent(input$run_mod,
                all_endemic<-all_Objs[["all_endemic"]]
                sel_var_endemic<-all_Objs[["sel_var_endemic"]]
                names_cov_Plot<-all_Objs[["names_cov_Plot"]]
+               
+               rm(all_Objs)
+               
+               gc()
                
                dist<-dat_fl$district
                years.dat<-sort(unique(dat_fl$year))

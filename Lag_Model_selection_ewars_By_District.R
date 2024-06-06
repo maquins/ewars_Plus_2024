@@ -196,13 +196,14 @@ if(!dir.exists(fold_CR1)){
 #inla_Strategy<-"laplace"
 
 inla_Strategy<-"simplified.laplace"
+#inla_Strategy<-"adaptive"
 Threads_Inla<-"2:1"
 
 control_VB=list(enable=T,
                 strategy="mean",
-                verbose=T,
+                verbose=F,
                 iter.max=28,
-                emergency=50)
+                emergency=60)
 
 Time_one_Dist<-system.time({
   
@@ -543,8 +544,14 @@ Time_one_Dist<-system.time({
       
       Var_ns_pref<-paste0('Var',gg)
       
-      Var_Cre_bs1<-Dat_mod_Selected[,Selected_lag_Vars[gg]]
+      #Var_Cre_bs1<-Dat_mod_Selected[,Selected_lag_Vars[gg]]
       
+      Var_Cre_bs1_0<-Dat_mod_Selected |> 
+        #data.frame() |> 
+        dplyr::mutate(var_sp=.data[[Selected_lag_Vars[gg]]]) |> 
+        dplyr::select(var_sp) 
+      
+      Var_Cre_bs1<-Var_Cre_bs1_0$var_sp
       
       inla_grp_Var<-data.frame(var=inla.group(Var_Cre_bs1,n=Inla_grp_Nsize,method ="quantile"))
       
@@ -558,28 +565,50 @@ Time_one_Dist<-system.time({
     
     #unique(Comb_Var_inla_Grps$Var1_Inla_group)
     
-    pp<-1
+    #pp<-1
     
     Inla_group_save<-function(pp){
       
       Inla_grp_Var_Obj<-paste0('Var',pp,'_Inla_group')
       
-      Var_Cre_bs1<-Dat_mod_Selected[,Selected_lag_Vars[gg]]
+      #Var_Cre_bs1<-Dat_mod_Selected[,Selected_lag_Vars[gg]]
       
-      probs_p<-c(0, ppoints(Inla_grp_Nsize -1), 1)
+      Var_Cre_bs1_0<-Dat_mod_Selected |> 
+        #data.frame() |> 
+        dplyr::mutate(var_sp=.data[[Selected_lag_Vars[pp]]]) |> 
+        dplyr::select(var_sp) 
       
-      aq<-unique(quantile(Var_Cre_bs1,probs_p,na.rm=T ))
+      Var_Cre_bs1<-Var_Cre_bs1_0$var_sp
       
-      a_cuts <- cut(Var_Cre_bs1, breaks = as.numeric(aq), include.lowest = TRUE)
+      #probs_p<-c(0, ppoints(Inla_grp_Nsize -1), 1)
       
-      inla_grp_Var<-data.frame(inla_var=inla.group(Var_Cre_bs1,n=Inla_grp_Nsize,method ="quantile"))
+      #aq<-unique(quantile(Var_Cre_bs1,probs_p,na.rm=T ))
+      
+      #a_cuts <- cut(Var_Cre_bs1, breaks = as.numeric(aq), include.lowest = TRUE)
+      
+      #inla_grp_Var<-data.frame(inla_var=inla.group(Var_Cre_bs1,n=Inla_grp_Nsize,method ="quantile"))
+      
+      inla_grp_Var_e<-data.frame(orig_var=Var_Cre_bs1,
+                                 inla_var=inla.group(Var_Cre_bs1,n=Inla_grp_Nsize,method ="quantile"))
       
       
-      inla_grp_Var1<-inla_grp_Var |> 
-        dplyr::mutate(Interval=a_cuts) |> 
+      
+      inla_grp_Var1<-inla_grp_Var_e |> 
+        dplyr::group_by(inla_var) |> 
         dplyr::filter(!is.na(inla_var)) |> 
-        unique() |> 
-        dplyr::arrange(inla_var)
+        dplyr::summarise(.groups="drop",int_beg=min(orig_var,na.rm =T),
+                         int_end=max(orig_var,na.rm =T),
+                         mid_point=median(orig_var,na.rm =T)) |> 
+        data.frame()
+        
+      
+      # inla_grp_Var1<-inla_grp_Var |> 
+      #   dplyr::mutate(Interval=a_cuts) |> 
+      #   dplyr::filter(!is.na(inla_var)) |> 
+      #   unique() |> 
+      #   dplyr::arrange(inla_var)
+      
+      
       
       names(inla_grp_Var1)[1]<-Inla_grp_Var_Obj
       
@@ -1835,6 +1864,9 @@ Time_one_Dist<-system.time({
     
     })
     
+    rm(district_Objs_save)
+    gc()
+    
     cat("",sep='\n')
     time_str<-paste0('Time ',round(time_Sav[3]/60,3), " min \n\n")
     
@@ -1939,6 +1971,11 @@ Time_one_Dist[3]/60
   
 file_name_save_all<-file.path(all_files_Path,"Shiny_Objs_all.rds")
 
+file_name_DBI_districts<-file.path(all_files_Path,"Districts_DBI_surve_Dat.rds")
+
+suppressWarnings(saveRDS(unique(all_endemic$district),file_name_DBI_districts,compress =T))
+
+
 cat("",sep='\n')
 
 cat('saving all district objs ... ',sep='\n')
@@ -1949,6 +1986,8 @@ time_Sav<-system.time({
   
 })
 
+rm(All_Objs_save)
+gc()
 
 time_str<-paste0(' Time ',round(time_Sav[3]/60,3), " min\n\n")
 cat("",sep='\n')
