@@ -113,7 +113,9 @@ if(run_Pros_pred){
                       pred_obj=file.path(pred_weights_pth,paste0('Pred_weights_',last_Dat_Year,'_',mn_pref,'.rds')))
       
       
-      vars_For_inla_grp<-str_split_fixed(Selected_lag_Vars_pros,"_",2)[,1]
+      #vars_For_inla_grp<-str_split_fixed(Selected_lag_Vars_pros,"_",2)[,1]
+      vars_For_inla_grp<-str_remove(Selected_lag_Vars_pros,'_LAG[:number:]+')
+      
       
       #vv<-1
       
@@ -656,6 +658,19 @@ if(run_Pros_pred){
       
       table_Out_pros<-table_Out_pros2[,vars_Tab_all_Out]
       
+      grob_Fun<-function(p_lot){
+        if(class(p_lot)[1]=="gg"){
+          ggplot2::ggplotGrob(p_lot)
+        }else{
+          p_lot
+        }
+      }
+      
+      #Plot_pros_Grobs<-list(grob_Fun(Plot_pros))
+      
+      #Plot_obs_rate_Grobs<-list(grob_Fun(Plot_obs_rate))
+      
+      
       db2_Output<-list(Plot_pros=Plot_pros,
                        meta_Prediction_wide=meta_Prediction_wide,
                        meta_Prediction=meta_Prediction,
@@ -663,6 +678,15 @@ if(run_Pros_pred){
                        Plot_obs_rate=Plot_obs_rate,
                        ratio_DB2=ratio_DB2,
                        dat_lab=dat_lab)
+      
+      # db2_Output<-list(Plot_pros=Plot_pros_Grobs,
+      #                  meta_Prediction_wide=meta_Prediction_wide,
+      #                  meta_Prediction=meta_Prediction,
+      #                  table_Out_pros=table_Out_pros,
+      #                  Plot_obs_rate=Plot_obs_rate_Grobs,
+      #                  ratio_DB2=ratio_DB2,
+      #                  dat_lab=dat_lab)
+      
       
       dbII_obj_name_save<-file.path(shinyDBII_obj_pth,"Shiny_DBII_Objs.rds")
       saveRDS(db2_Output,dbII_obj_name_save,compress =T)

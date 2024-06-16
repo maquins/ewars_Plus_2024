@@ -122,8 +122,24 @@ observeEvent(input$run_mod,
                  
                  shiny_obj1<-get_Ojs1()
                  
-                 tab_Dat<-shiny_obj1[["tab_Dat"]]
-                 tab_Dat_lag<-shiny_obj1[["tab_Dat_lag"]]
+                 dat_kl_Long<-shiny_obj1[["dat_kl_Long"]]
+                 Lag_dic_comp1_Long<-shiny_obj1[["Lag_dic_comp1_Long"]]
+                 
+                 tab_Dat<-tabulator(x=dat_kl_Long,
+                                    rows=c("Variable","Year"),
+                                    columns=c("variable"),
+                                    ystats=as_paragraph(value)
+                 )
+                 
+                 
+                 tab_Dat_lag<-tabulator(x=Lag_dic_comp1_Long,
+                                        rows=c("Variable","var"),
+                                        columns=c("variable"),
+                                        ystats=as_paragraph(value)
+                 )
+                 
+                 #tab_Dat<-shiny_obj1[["tab_Dat"]]
+                 #tab_Dat_lag<-shiny_obj1[["tab_Dat_lag"]]
                  
                  dat_kl<-shiny_obj1[["dat_kl"]]
                  all_kl_cmd<-shiny_obj1[["all_kl_cmd"]]
@@ -224,7 +240,7 @@ observeEvent(input$run_mod,
                  i<-1
                  for(i in 1:length(vars_get_summary)){
                    text_rend0<-paste0('output$descr_plot_',i,'<-renderPlot({
-                     print(plot_List0[[',i,']])})'
+                     plot(plot_List0[[',i,']])})'
                    )
 
                    eval(parse(text=text_rend0))
@@ -257,7 +273,8 @@ observeEvent(input$run_mod,
                  seasonal_plot<-shiny_obj1[["seasonal_plot"]]
                  
                  output$Seasonality_plot<-renderPlot({ 
-                   print(seasonal_plot)
+                   #print(seasonal_plot)
+                   plot(seasonal_plot)
                  })
                  
                  
@@ -418,7 +435,11 @@ observeEvent(input$run_mod,
                  alarm_vars_lag<-input$alarm_indicators_New_model
                  #df1<<-df
                  
-                 model_dlnm<-shiny_obj1[["dlnm_Model"]]
+                 #model_dlnm<-shiny_obj1[["dlnm_Model"]]
+                 
+                 dlnm_coef <- shiny_obj1[["dlnm_coef"]]
+                 dlnm_vcov <- shiny_obj1[["dlnm_vcov"]]
+                 dlnm_names_fixed<-shiny_obj1[["dlnm_names_fixed"]]
 
                
                    get_lag_plots<-function(p){
@@ -437,9 +458,9 @@ observeEvent(input$run_mod,
                      temp_var<-str_detect(alarm_vars_lag[p],'temp')
                      cat(paste(basis_var_n,'\n\n'))
                      
-                     coef <- model_dlnm$summary.fixed$mean
-                     vcov <- model_dlnm$misc$lincomb.derived.covariance.matrix
-                     indt <- grep(basis_vars_lag[p], model_dlnm$names.fixed)
+                     coef <- dlnm_coef
+                     vcov <- dlnm_vcov
+                     indt <- grep(basis_vars_lag[p], dlnm_names_fixed)
                      computed_basis<-eval(parse(text=(basis_var_n[p])))
                      #assign("computed_basis",eval(parse(text=(basis_var_n[p]))))
                      

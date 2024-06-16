@@ -25,7 +25,6 @@ covar_to_Plot<-c(number_of_cases,pop.var.dat,alarm_indicators)
 
 
 
-
 ##Compute endemic Channel
 
 years_dat<-sort(unique(data_augmented0$year))
@@ -65,6 +64,8 @@ get_endemic<-function(Dat_end,Year){
 }
 
 all_endemic<-foreach(Yr=years_dat,.combine =rbind)%do% get_endemic(data_augmented0,Yr)
+
+
 
 data_augmented<-data_augmented0 |> 
   dplyr::left_join(all_endemic,by=c("district","year","week")) |> 
@@ -113,18 +114,23 @@ vars_Base<-c("district","year","week","date","Cases",
              "mean_rate","sd_rate",
              "Pop","log_Pop")
 
+Min_lag<-4
+
+Max_lag<-12
+
 Get_alarm_vars<-function(pp){
   
   dat_Lg<-data_augmented |> 
     #dplyr::filter(data_augmented[[alarm_vars[pp]]]==0) |> 
     dplyr::rename(alarm_var=alarm_vars[pp]) |> 
     dplyr::select(district,year,week,alarm_var)
+  
   names(dat_Lg)
   
-  Var_lags<-tsModel::Lag(dat_Lg$alarm_var, group = dat_Lg$district, k = 1:nlag) |> 
+  Var_lags<-tsModel::Lag(dat_Lg$alarm_var, group = dat_Lg$district, k = Min_lag:Max_lag) |> 
     data.frame()
   
-  names(Var_lags)<-paste0(alarm_vars[pp],"_LAG",1:nlag)
+  names(Var_lags)<-paste0(alarm_vars[pp],"_LAG",Min_lag:Max_lag)
   
   ## compute Lags Summaries
   
@@ -197,7 +203,8 @@ if(!dir.exists(fold_CR1)){
 
 inla_Strategy<-"simplified.laplace"
 #inla_Strategy<-"adaptive"
-Threads_Inla<-"2:1"
+#inla_Strategy<-"laplace"
+Threads_Inla<-"3:1"
 
 control_VB=list(enable=T,
                 strategy="mean",
@@ -235,7 +242,7 @@ Time_one_Dist<-system.time({
                 family =mod_Family,
                 #control.inla = list(strategy = 'adaptive'), 
                 control.inla = list(strategy = inla_Strategy,
-                                    parallel.linesearch=F,
+                                    parallel.linesearch=T,
                                     improved.simplified.laplace=T,
                                     control.vb=control_VB), 
                 control.compute = list(dic = TRUE, 
@@ -259,7 +266,7 @@ Time_one_Dist<-system.time({
     
     #Dat_mod_sub_c<<-Dat_mod_sub
     
-    list_out_mod<<-list(form_baseline=form_baseline,
+    list_out_mod<-list(form_baseline=form_baseline,
                        Dat_mod_sub=Dat_mod_sub,
                        get_Model=get_Model)
     
@@ -282,7 +289,7 @@ Time_one_Dist<-system.time({
                 data=mod.Data,
                 family =mod_Family,
                 control.inla = list(strategy = inla_Strategy,
-                                    parallel.linesearch=F,
+                                    parallel.linesearch=T,
                                     improved.simplified.laplace=T,
                                     control.vb=control_VB), 
                 control.compute = list(dic = TRUE, 
@@ -409,10 +416,9 @@ Time_one_Dist<-system.time({
     Selected_lags<-Lag_dic_comp1 |> 
       dplyr::filter(Rank==1)
     
-    
-    
+   
     #if(length(alarm_vars)==2){
-    if(length(alarm_vars)>1){
+    if(length(alarm_vars)>0){
       
       Lags_to_Comb<-2
       
@@ -512,8 +518,13 @@ Time_one_Dist<-system.time({
     }
     
     Min_Sel_Lag<-min(as.numeric(str_extract(Selected_lag_Vars_a,'[:number:]+')))
+    Max_Sel_Lag<-max(as.numeric(str_extract(Selected_lag_Vars_a,'[:number:]+')))
+    sel_lag_max<-max(as.numeric(Selected_lags$lag))
     
-    Selected_lag_Vars<-str_replace(Selected_lag_Vars_a,'[:number:]+',as.character(Min_Sel_Lag))
+    
+    #Selected_lag_Vars<-str_replace(Selected_lag_Vars_a,'[:number:]+',as.character(Min_Sel_Lag))
+    Selected_lag_Vars<-str_replace(Selected_lag_Vars_a,'[:number:]+',as.character(sel_lag_max))
+    
     
     vars_Base1<-c("district",'ID_spat',"year",'ID_year',"week","date","Cases",
                   "mean_cases","sd_cases",
@@ -792,7 +803,8 @@ Time_one_Dist<-system.time({
           
           Nsamples<-1000
           
-          xx <- inla.posterior.sample(Nsamples,model_CV,num.threads ="1:1")
+
+          xx <- inla.posterior.sample(Nsamples,model_CV,num.threads ="1:1",seed=234535356633)
           
           xx.size<-inla.posterior.sample.eval(function(...) c(theta[1]), xx)
           xx.s<-inla.posterior.sample.eval(function(...) c(Predictor), xx)[cv_idx,]
@@ -1391,6 +1403,18 @@ Time_one_Dist<-system.time({
     }
     #?guide_colorbar 
     plot_List0<-foreach(a=1:length(vars_get_summary),.combine =c)%do% plot_desc(a)
+    
+    grob_Fun<-function(p_lot){
+      if(class(p_lot)[1]=="gg"){
+        ggplot2::ggplotGrob(p_lot)
+      }else{
+        p_lot
+      }
+    }
+    
+    plot_List0_Grobs<-lapply(plot_List0, FUN =function(x) grob_Fun(x))
+    
+    
     cat(paste("Summary variables ::\n"),paste(vars_get_summary,collapse =','),'\n\n')
     #prrrrr<<-plot_List
     ## render Plots in a loop
@@ -1760,6 +1784,10 @@ Time_one_Dist<-system.time({
       tim_CV<-NA
     }
     
+    
+    
+    Seasonality_Grobs<-grob_Fun(plot.seas)
+    
     district_Objs_save<-list(data_augmented=data_augmented,
                              all_endemic=all_endemic,
                              Dist_IDS=Dist_IDS,
@@ -1773,7 +1801,8 @@ Time_one_Dist<-system.time({
                              Dat_mod_Selected_with_Inla_groups=Dat_mod_Selected_with_Inla_groups,
                              Dat_mod_sub=Dat_mod_sub,
                              Model_data_lags_sub=Model_data_lags_sub,
-                             form_baseline=form_baseline,
+                             #form_baseline=form_baseline,
+                             form_baseline=paste0(as.character(as.formula(form_baseline))[-1],collapse ="~"),
                              #baseline_model=baseline_model,
                              theta_beg=theta_beg,
                              id_lag=id_lag,
@@ -1803,8 +1832,13 @@ Time_one_Dist<-system.time({
                              #Dat_mod_Selected=Dat_mod_Selected,
                              Select_Lag_Comb=Select_Lag_Comb,
                              Select_Lag_Comb_rw=Select_Lag_Comb_rw,
-                             selected_Model_form=selected_Model_form,
-                             selected_Model_form_rw=selected_Model_form_rw,
+                             ########
+                             #selected_Model_form=selected_Model_form,
+                             selected_Model_form=paste0(as.character(as.formula(selected_Model_form))[-1],collapse ="~"),
+                             
+                             #selected_Model_form_rw=selected_Model_form_rw,
+                             selected_Model_form_rw=paste0(as.character(as.formula(selected_Model_form_rw))[-1],collapse ="~"),
+                             
                              ## suppressed 2024-04-23
                              #model_final_Lin=model_final_Lin,
                              #model_final_rw=model_final_rw,
@@ -1815,13 +1849,19 @@ Time_one_Dist<-system.time({
                              zvalue_sel_Ordered=zvalue_sel_Ordered,
                              selected_zvalue=selected_zvalue,
                              data_one=data_one,
-                             tab_Dat=tab_Dat,
-                             tab_Dat_lag=tab_Dat_lag,
-                             summary_plots=plot_List0,
+                             ##
+                             #tab_Dat=tab_Dat,
+                             #tab_Dat_lag=tab_Dat_lag,
+                             dat_kl_Long=dat_kl_Long,
+                             Lag_dic_comp1_Long=Lag_dic_comp1_Long,
+                             ###
+                             #summary_plots=plot_List0,
+                             summary_plots=plot_List0_Grobs,
                              #all_xts_Plots=all_xts_Plots,
                              all_Plot_Poly=all_Plot_Poly,
                              leaflet_plots=plot_List,
-                             seasonal_plot=plot.seas,
+                             #seasonal_plot=plot.seas,
+                             seasonal_plot=Seasonality_Grobs,
                              nlag=nlag,
                              all_basis_vars=all_basis_vars,
                              n_district=n_district,
@@ -1829,8 +1869,13 @@ Time_one_Dist<-system.time({
                              Dat_mod_for_dlnn=Dat_mod_for_dlnn,
                              Data_dlnm=Data_dlnm,
                              basis_var_n=basis_var_n,
-                             formula0.2=formula0.2,
-                             dlnm_Model=dlnm_Model,
+                             #formula0.2=formula0.2,
+                             formula0.2=paste0(as.character(as.formula(formula0.2))[-1],collapse ="~"),
+                             
+                             #dlnm_Model=dlnm_Model,
+                             dlnm_coef=dlnm_Model$summary.fixed$mean,
+                             dlnm_vcov=dlnm_Model$misc$lincomb.derived.covariance.matrix,
+                             dlnm_names_fixed=dlnm_Model$names.fixed,
                              #Total_Run_time=Time_one_Dist,
                              dat_kl=dat_kl,
                              all_kl=all_kl,
@@ -1896,8 +1941,10 @@ Time_one_Dist[3]/60
                            Dat_mod=Dat_mod,
                            Dat_mod_sub=Dat_mod_sub,
                            Model_data_lags_sub=Model_data_lags_sub,
-                           form_baseline=form_baseline,
-                           baseline_model=baseline_model,
+                           #form_baseline=form_baseline,
+                           form_baseline=paste0(as.character(as.formula(form_baseline))[-1],collapse ="~"),
+                      
+                           baseline_model=summary(baseline_model),
                            sel_var_endemic=sel_var_endemic,
                            #theta_beg=theta_beg,
                            id_lag=id_lag,
@@ -1923,8 +1970,12 @@ Time_one_Dist[3]/60
                            Dat_mod_Selected_with_Inla_groups=Dat_mod_Selected_with_Inla_groups,
                            #Select_Lag_Comb=Select_Lag_Comb,
                            #Select_Lag_Comb_ns=Select_Lag_Comb_ns,
-                           selected_Model_form=selected_Model_form,
-                           selected_Model_form_rw=selected_Model_form_rw,
+                           #selected_Model_form=selected_Model_form,
+                           selected_Model_form=paste0(as.character(as.formula(selected_Model_form))[-1],collapse ="~"),
+                      
+                           #selected_Model_form_rw=selected_Model_form_rw,
+                           selected_Model_form_rw=paste0(as.character(as.formula(selected_Model_form_rw))[-1],collapse ="~"),
+                      
                            #model_final_Lin=model_final_Lin,
                            #model_final_ns=model_final_ns,
                            #work_CV=work_CV,
@@ -1947,8 +1998,12 @@ Time_one_Dist[3]/60
                            Dat_mod_for_dlnn=Dat_mod_for_dlnn,
                            Data_dlnm=Data_dlnm,
                            basis_var_n=basis_var_n,
-                           formula0.2=formula0.2,
-                           dlnm_Model=dlnm_Model,
+                           #formula0.2=formula0.2,
+                           formula0.2=paste0(as.character(as.formula(formula0.2))[-1],collapse ="~"),
+                           #dlnm_Model=dlnm_Model,
+                           dlnm_coef=dlnm_Model$summary.fixed$mean,
+                           dlnm_vcov=dlnm_Model$misc$lincomb.derived.covariance.matrix,
+                           dlnm_names_fixed=dlnm_Model$names.fixed,
                            #Total_Run_time=Time_one_Dist,
                            #dat_kl=dat_kl,
                            #all_kl=all_kl,
